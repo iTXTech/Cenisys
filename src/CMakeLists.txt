@@ -9,12 +9,11 @@ find_package(Boost 1.62
     )
 find_package(Threads REQUIRED)
 include_directories("${PROJECT_SOURCE_DIR}/include")
-# Overrides for boost
-include_directories("${PROJECT_SOURCE_DIR}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 configure_file(config.h.in config.h)
 add_library(CenisysCore SHARED
-    servermanager.cpp
+    server/servermanager.cpp
+    server/server.cpp
     )
 target_link_libraries(CenisysCore PRIVATE
     Threads::Threads
@@ -36,6 +35,8 @@ target_link_libraries(cenisys
     Boost::program_options
     Boost::system
     )
+# Overrides for boost
+include_directories("${PROJECT_SOURCE_DIR}")
 set_property(TARGET cenisys CenisysCore PROPERTY CXX_STANDARD 14)
 set_property(TARGET cenisys CenisysCore PROPERTY CXX_STANDARD_REQUIRED YES)
 install(TARGETS cenisys CenisysCore

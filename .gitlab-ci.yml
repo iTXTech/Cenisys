@@ -21,13 +21,13 @@ build:gcc:
     paths:
      - usr/
 
-.build:unit-test:
+build:unit-test:
   stage: build
   script:
    - mkdir -p build
    - cd build
-   - CC=clang CXX=clang++ CFLAGS="-fprofile-instr-generate -fcoverage-mapping -flto" CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping -flto" cmake -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_DOC=OFF -DBUILD_TEST=ON -DVERSION_SUFFIX=`[ -z "$CI_BUILD_TAG" ] && echo "${CI_BUILD_REF:0:7}" || echo ""` ..
-   - DESTDIR=.. ninja install
+   - CC=clang CXX=clang++ CFLAGS="-fprofile-instr-generate -fcoverage-mapping" CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping" LDFLAGS="-fprofile-instr-generate" cmake -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../prefix/ -DBUILD_DOC=OFF -DBUILD_TEST=ON -DVERSION_SUFFIX=`[ -z "$CI_BUILD_TAG" ] && echo "${CI_BUILD_REF:0:7}" || echo ""` ..
+   - ninja install
   cache:
     untracked: true
     paths:
@@ -36,7 +36,7 @@ build:gcc:
   artifacts:
     name: "cenisys-test-${CI_BUILD_REF:0:7}"
     paths:
-     - usr/
+     - prefix/
 
 clang-static:
   stage: build
@@ -51,12 +51,12 @@ clang-static:
     paths:
      - report/
 
-.test:unit-test:
+test:unit-test:
   stage: test
   script:
-   - mv usr/ -t /
-   - test_runner
-   - llvm-profdata merge -o unit-test.profdata default.profraw
+   - LLVM_PROFILE_FILE="unit-test.profraw" LD_LIBRARY_PATH="./prefix/lib/" ./prefix/bin/cenisys-test
+   - llvm-profdata merge -o unit-test.profdata unit-test.profraw
+   - llvm-cov report ./prefix/lib/libCenisysCore.so -instr-profile=unit-test.profdata 
   dependencies:
      - build:unit-test
   artifacts:

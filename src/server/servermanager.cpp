@@ -17,28 +17,45 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with Cenisys.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef CENISYS_SERVERMANAGER_H
-#define CENISYS_SERVERMANAGER_H
 
-#include <list>
-#include <boost/asio/io_service.hpp>
+#include "server/servermanager.h"
+#include <fstream>
+#include <boost/assert.hpp>
 
 namespace Cenisys
 {
 
-class ServerManager
+ServerManager::ServerManager(const std::string &configPath)
+    : sched_data_(service_)
 {
-public:
-    ServerManager();
+    BOOST_ASSERT(!instance_);
+    instance_ = this;
+    std::ifstream conf(configPath);
+    toml::ParseResult result = toml::parse(conf);
+    ConfigParser<MasterConfig>()(result.value, config_);
+}
 
-    static ServerManager instance;
+ServerManager::~ServerManager()
+{
+    BOOST_ASSERT(instance_);
+    instance_ = nullptr;
+}
 
-    boost::asio::io_service &getIoService();
+int ServerManager::exec()
+{
+    return 0;
+}
 
-private:
-    boost::asio::io_service service_;
-};
+boost::asio::io_service &ServerManager::getIoService()
+{
+    return service_;
+}
+
+ServerManager *ServerManager::getInstance()
+{
+    return instance_;
+}
+
+ServerManager *ServerManager::instance_{};
 
 } // namespace Cenisys
-
-#endif // CENISYS_SERVERMANAGER_H

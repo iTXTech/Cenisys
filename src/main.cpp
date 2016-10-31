@@ -33,14 +33,13 @@
 #include <boost/locale/generator.hpp>
 #include <boost/locale/message.hpp>
 #include <boost/program_options.hpp>
-#include "servermanager.h"
+#include "server/servermanager.h"
 
 int main(int argc, char *argv[])
 {
     boost::locale::generator localeGen;
     localeGen.add_messages_path(PACKAGE_LOCALE_DIR);
     localeGen.set_default_messages_domain(GETTEXT_PACKAGE);
-    std::locale oldLoc = std::locale::global(localeGen(""));
     boost::program_options::options_description desc;
     std::string configFile;
     desc.add_options()(
@@ -67,7 +66,7 @@ int main(int argc, char *argv[])
     }
     if(vm.count("version"))
     {
-        std::locale oldCoutLoc = std::cout.imbue(std::locale());
+        std::locale oldCoutLoc = std::cout.imbue(localeGen(""));
         std::cout
             << boost::locale::format(
                    boost::locale::translate("Cenisys {1}\n")) %
@@ -84,10 +83,6 @@ int main(int argc, char *argv[])
     }
 
     // HACK: destruction order fiasco
-    boost::fibers::algo::asio_queue_data *data =
-        new boost::fibers::algo::asio_queue_data(
-            Cenisys::ServerManager::instance.getIoService());
-    boost::fibers::use_scheduling_algorithm<boost::fibers::algo::asio>(*data);
-
-    std::locale::global(oldLoc);
+    Cenisys::ServerManager &manager = *new Cenisys::ServerManager(configFile);
+    return manager.exec();
 }

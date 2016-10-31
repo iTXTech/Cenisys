@@ -1,5 +1,5 @@
 /*
- * ServerManager
+ * Server
  * Copyright (C) 2016 iTX Technologies
  *
  * This file is part of Cenisys.
@@ -17,22 +17,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with Cenisys.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef CENISYS_SERVER_H
+#define CENISYS_SERVER_H
 
-#include "servermanager.h"
-#include <boost/fiber/algo/asio.hpp>
+#include <utility>
+#include "config/configparser.h"
 
 namespace Cenisys
 {
 
-ServerManager::ServerManager()
+class Server
 {
-}
+public:
+    struct Config;
+    Server(Config &config);
 
-boost::asio::io_service &ServerManager::getIoService()
-{
-    return service_;
-}
-
-ServerManager ServerManager::instance;
+private:
+    std::reference_wrapper<Config> config_;
+};
 
 } // namespace Cenisys
+
+CENISYS_DEFINE_CONFIG_PARSER((Cenisys), Server::Config, (int, max_players, 64))
+
+#endif // CENISYS_SERVER_H

@@ -26,40 +26,30 @@ namespace fibers
 {
 namespace algo
 {
-class BOOST_FIBERS_DECL asio_queue_data
-{
-private:
-    friend class asio;
-    using rqueue_t = scheduler::ready_queue_t;
-    rqueue_t rqueue_;
-    std::mutex rqueue_mtx_;
-    std::condition_variable rqueue_condvar_;
-    boost::asio::io_service &svc_;
-    boost::asio::steady_timer timer_;
-    bool polling_;
-
-public:
-    asio_queue_data(boost::asio::io_service &svc)
-        : svc_(svc), timer_(svc_), polling_(false)
-    {
-    }
-};
 
 class BOOST_FIBERS_DECL asio : public algorithm
 {
-private:
-    using lqueue_t = scheduler::ready_queue_t;
-
-    lqueue_t lqueue_;
-    std::mutex mtx_;
-    std::condition_variable cnd_;
-    boost::fibers::algo::asio_queue_data &data_;
-    bool stop_;
 
 public:
-    asio(boost::fibers::algo::asio_queue_data &data) : data_(data), stop_(false)
+    class BOOST_FIBERS_DECL shared_data
     {
-    }
+    private:
+        friend class asio;
+        using rqueue_t = scheduler::ready_queue_t;
+        rqueue_t rqueue_;
+        std::mutex rqueue_mtx_;
+        std::condition_variable rqueue_condvar_;
+        boost::asio::io_service &svc_;
+        boost::asio::steady_timer timer_;
+        bool polling_;
+
+    public:
+        shared_data(boost::asio::io_service &svc)
+            : svc_(svc), timer_(svc_), polling_(false)
+        {
+        }
+    };
+    asio(shared_data &data) : data_(data), stop_(false) {}
 
     asio(asio const &) = delete;
 
@@ -128,7 +118,7 @@ public:
         {
             data_.polling_ = true;
             lock.unlock();
-            // TODO: this is supposed to be polling all tasks with timeout
+            // TODO: this is supposed to be polling all tasks
             data_.timer_.expires_at(time_point);
             if(data_.svc_.run_one())
             {
@@ -146,15 +136,23 @@ public:
     {
         if(data_.polling_)
         {
-            // TODO: a better method to interrupt
-            data_.svc_.post([] {});
+            data_.timer_.cancel();
         }
         else
         {
             // This is called when a remote thread adds pending task.
-            data_.rqueue_condvar_.notify_one();
+            data_.rqueue_condvar_.notify_all();
         }
     }
+
+private:
+    using lqueue_t = scheduler::ready_queue_t;
+
+    lqueue_t lqueue_;
+    std::mutex mtx_;
+    std::condition_variable cnd_;
+    shared_data &data_;
+    bool stop_;
 };
 }
 }
