@@ -2,8 +2,11 @@ Cenisys
 =======
 
 .. image:: https://gitlab.com/itxtech/cenisys/badges/master/build.svg
-   :alt: GitLab CI
-   :target: https://gitlab.com/itxtech/cenisys/builds
+   :alt: build status
+   :target: https://gitlab.com/itxtech/cenisys/commits/master
+.. image:: https://gitlab.com/itxtech/cenisys/badges/master/coverage.svg
+   :alt: coverage report
+   :target: https://gitlab.com/itxtech/cenisys/commits/master
 
 Canonical source
 ----------------
