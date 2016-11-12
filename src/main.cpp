@@ -27,7 +27,7 @@
 #include <thread>
 #include <vector>
 #include <boost/fiber/algo/asio.hpp>
-#include <boost/fiber/yield.hpp>
+#include <boost/fiber/asio/use_future.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/locale/format.hpp>
 #include <boost/locale/generator.hpp>
@@ -82,7 +82,6 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    // HACK: destruction order fiasco
-    Cenisys::ServerManager &manager = *new Cenisys::ServerManager(configFile);
+    Cenisys::ServerManager manager(configFile);
     return manager.exec();
 }

@@ -1,6 +1,5 @@
 // An reference implementation for integrating Boost.{Asio,Fiber}.
 // Public domain, credit me if you prefer to do so.
-// TODOs require Asio refactor.
 
 #ifndef BOOST_FIBER_ALGO_ASIO_H
 #define BOOST_FIBER_ALGO_ASIO_H
@@ -15,8 +14,6 @@
 #include "boost/fiber/detail/config.hpp"
 #include "boost/fiber/scheduler.hpp"
 #include "boost/fiber/type.hpp"
-
-#include <atomic>
 
 #include <iostream>
 
@@ -33,6 +30,12 @@ class BOOST_FIBERS_DECL asio : public algorithm
 public:
     class BOOST_FIBERS_DECL shared_data
     {
+    public:
+        shared_data(boost::asio::io_service &svc)
+            : svc_(svc), timer_(svc_), polling_(false)
+        {
+        }
+
     private:
         friend class asio;
         using rqueue_t = scheduler::ready_queue_t;
@@ -42,14 +45,8 @@ public:
         boost::asio::io_service &svc_;
         boost::asio::steady_timer timer_;
         bool polling_;
-
-    public:
-        shared_data(boost::asio::io_service &svc)
-            : svc_(svc), timer_(svc_), polling_(false)
-        {
-        }
     };
-    asio(shared_data &data) : data_(data), stop_(false) {}
+    asio(shared_data &data) : data_(data) {}
 
     asio(asio const &) = delete;
 
@@ -76,7 +73,7 @@ public:
     {
         context *ctx(nullptr);
         std::unique_lock<std::mutex> lk(data_.rqueue_mtx_);
-        if(!stop_ && !data_.rqueue_.empty())
+        if(!data_.rqueue_.empty())
         {
             // pop an item from the ready queue
             ctx = &data_.rqueue_.front();
@@ -112,7 +109,14 @@ public:
         std::unique_lock<std::mutex> lock(data_.rqueue_mtx_);
         if(data_.polling_)
         {
-            data_.rqueue_condvar_.wait_until(lock, time_point);
+            if(std::chrono::steady_clock::time_point::max() == time_point)
+            {
+                data_.rqueue_condvar_.wait(lock);
+            }
+            else
+            {
+                data_.rqueue_condvar_.wait_until(lock, time_point);
+            }
         }
         else
         {
@@ -120,14 +124,13 @@ public:
             lock.unlock();
             // TODO: this is supposed to be polling all tasks
             data_.timer_.expires_at(time_point);
+            data_.timer_.async_wait([](const boost::system::error_code &) {});
             if(data_.svc_.run_one())
             {
                 data_.svc_.poll();
             }
-            else
-            {
-                stop_ = true;
-            }
+            data_.rqueue_condvar_.notify_all();
+            lock.lock();
             data_.polling_ = false;
         }
     }
@@ -135,10 +138,6 @@ public:
     void notify() noexcept
     {
         if(data_.polling_)
-        {
-            data_.timer_.cancel();
-        }
-        else
         {
             // This is called when a remote thread adds pending task.
             data_.rqueue_condvar_.notify_all();
@@ -152,7 +151,6 @@ private:
     std::mutex mtx_;
     std::condition_variable cnd_;
     shared_data &data_;
-    bool stop_;
 };
 }
 }

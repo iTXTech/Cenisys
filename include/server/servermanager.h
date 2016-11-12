@@ -20,9 +20,12 @@
 #ifndef CENISYS_SERVERMANAGER_H
 #define CENISYS_SERVERMANAGER_H
 
-#include <list>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 #include <boost/asio/io_service.hpp>
 #include <boost/fiber/algo/asio.hpp>
+#include <boost/fiber/condition_variable.hpp>
 #include "config/configparser.h"
 #include "server.h"
 
@@ -50,7 +53,9 @@ private:
     static ServerManager *instance_;
     boost::asio::io_service service_;
     boost::fibers::algo::asio::shared_data sched_data_;
-    std::list<Server> servers_;
+    boost::fibers::condition_variable_any thread_join_;
+    std::vector<std::thread> threads_;
+    std::unordered_map<std::string, Server> servers_;
     MasterConfig config_;
 };
 
