@@ -12,6 +12,10 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 configure_file(config.h.in config.h)
 add_library(CenisysCore SHARED
+    block/block.cpp
+    block/blockref.cpp
+    block/air.cpp
+    world/chunk.cpp
     server/servermanager.cpp
     server/server.cpp
     )

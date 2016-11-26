@@ -22,9 +22,7 @@
 
 #include <iostream>
 #include <locale>
-#include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 #include <boost/fiber/algo/asio.hpp>
 #include <boost/fiber/asio/use_future.hpp>
