@@ -5,7 +5,7 @@ if(BUILD_TEST)
         unit_test_framework
         REQUIRED
         )
-    include_directories("${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+    include_directories("${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}" "${PROJECT_SOURCE_DIR}/src")
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
     add_executable(cenisys-test
         main.cpp

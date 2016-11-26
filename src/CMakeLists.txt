@@ -8,7 +8,7 @@ find_package(Boost 1.62
     REQUIRED
     )
 find_package(Threads REQUIRED)
-include_directories("${PROJECT_SOURCE_DIR}/include")
+include_directories("${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 configure_file(config.h.in config.h)
 add_library(CenisysCore SHARED
